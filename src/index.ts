@@ -5,10 +5,11 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Scene, Renderer, PerspectiveCamera, WebGLRenderer, PlaneGeometry, MeshBasicMaterial, Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import ModelLoader from './ModelLoader'
+import Grid from './grid';
 
-var scene : Scene; 
-var renderer : WebGLRenderer;
-var camera : PerspectiveCamera;
+var scene: Scene;
+var renderer: WebGLRenderer;
+var camera: PerspectiveCamera;
 var stats;
 var model, skeleton, mixer, clock;
 var crossFadeControls = [];
@@ -17,6 +18,8 @@ var idleWeight, walkWeight, runWeight;
 var actions, settings;
 var singleStepMode = false;
 var sizeOfNextStep = 0;
+var mouse = new THREE.Vector2(), INTERSECTED;
+var raycaster;
 
 init();
 
@@ -50,9 +53,8 @@ function init() {
     scene.add(mesh);
 
     var loader = new GLTFLoader();
-    var modelLoader : ModelLoader;
-    modelLoader = new ModelLoader('resources/Soldier.glb', function loadModel(gltf) 
-    {
+    var modelLoader: ModelLoader;
+    modelLoader = new ModelLoader('resources/Soldier.glb', function loadModel(gltf) {
         return new Promise(resolve => {
             model = gltf.scene;
             scene.add(model);
@@ -72,14 +74,14 @@ function init() {
             walkAction = mixer.clipAction(animations[3]);
             runAction = mixer.clipAction(animations[1]);
             actions = [idleAction, walkAction, runAction];
-    
+
             createPanel();
             activateAllActions();
             animate();
-            moveModel();
         });
     })
 
+    raycaster = new THREE.Raycaster();
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -89,32 +91,56 @@ function init() {
     container.appendChild(renderer.domElement);
 
     addOrbitControl();
-    addPlane();
+    addGrid();
 
     stats = new Stats();
     container.appendChild(stats.dom);
+
+    document.addEventListener( 'mousemove', onDocumentMouseMove, false );
     window.addEventListener('resize', onWindowResize, false);
+    window.requestAnimationFrame(animate);
 }
 
-function addOrbitControl()
-{
+function addOrbitControl() {
     var controls = new OrbitControls(camera, renderer.domElement);
     controls.maxPolarAngle = Math.PI * 0.5;
     //controls.minDistance = 1000;
     //controls.maxDistance = 5000;
 }
 
-function moveModel()
-{
-    skeleton.position = new Vector3(2, 10, 0);
-}
+var grid : Grid;
 
-function addPlane() {
-    var geometry : PlaneGeometry = new THREE.PlaneGeometry (1, 1, 1);
-    var material : MeshBasicMaterial = new THREE.MeshBasicMaterial({color:0xffff00, side: THREE.DoubleSide});
-    var plane = new THREE.Mesh(geometry, material);
-    plane.rotation.x = - Math.PI / 2;
-    scene.add(plane);
+function addGrid() 
+{
+    grid = new Grid(10, 1);
+    scene.add(grid.treeObj);
+    // grid = new THREE.Object3D();
+    // var geometry: PlaneGeometry = new THREE.PlaneGeometry(1, 1, 1);
+
+    // var material: MeshBasicMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
+    // var material2: MeshBasicMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
+    // var material3: MeshBasicMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
+
+    // var plane = new THREE.Mesh(geometry, material);
+    // var planeObj = new THREE.Object3D();
+    // planeObj.name = "plane";
+    // planeObj.add(plane);
+    // plane.rotation.x = - Math.PI / 2;
+
+    // var plane2 = plane.clone();
+    // plane2.material = material2;
+    // plane2.translateX(1.01);
+
+    // var plane3 = plane.clone();
+    // plane3.material = material3;
+    // plane3.translateX(-1.01);
+
+    // grid.add(plane);
+    // //grid.add(planeObj);
+    // grid.add(plane2);
+    // grid.add(plane3);
+
+    // scene.add(grid);
 }
 
 function createPanel() {
@@ -354,5 +380,35 @@ function animate() {
     // Update the animation mixer, the stats panel, and render this frame
     mixer.update(mixerUpdateDelta);
     stats.update();
+
+    mouseInteract();
+
     renderer.render(scene, camera);
+}
+
+function onDocumentMouseMove( event ) {
+    // calculate mouse position in normalized device coordinates
+	// (-1 to +1) for both components
+    event.preventDefault();
+
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+}
+
+function mouseInteract() {
+    raycaster.setFromCamera(mouse, camera);
+    
+    var intersects = raycaster.intersectObjects(grid.treeObj.children);
+    if (intersects.length > 0) {
+        if (INTERSECTED != intersects[0].object) {
+            if (INTERSECTED) INTERSECTED.material.color.set(INTERSECTED.currentColor);
+            INTERSECTED = intersects[0].object;
+            console.log(INTERSECTED);
+            INTERSECTED.currentColor = INTERSECTED.material.color;
+            INTERSECTED.material.color.set(0xff0000);
+        }
+    } else {
+        if (INTERSECTED) INTERSECTED.material.color.set(0x000000);
+        INTERSECTED = null;
+    }
 }
