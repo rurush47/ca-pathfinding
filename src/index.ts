@@ -31,7 +31,7 @@ function init() {
     clock = new THREE.Clock();
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xa0a0a0);
-    scene.fog = new THREE.Fog(0xa0a0a0, 10, 50);
+    //scene.fog = new THREE.Fog(0xa0a0a0, 10, 50);
     var hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
     hemiLight.position.set(0, 20, 0);
     scene.add(hemiLight);
@@ -98,7 +98,7 @@ function init() {
 
     document.addEventListener( 'mousemove', onDocumentMouseMove, false );
     window.addEventListener('resize', onWindowResize, false);
-    window.requestAnimationFrame(animate);
+    //window.requestAnimationFrame(animate);
 }
 
 function addOrbitControl() {
@@ -114,33 +114,6 @@ function addGrid()
 {
     grid = new Grid(10, 1);
     scene.add(grid.treeObj);
-    // grid = new THREE.Object3D();
-    // var geometry: PlaneGeometry = new THREE.PlaneGeometry(1, 1, 1);
-
-    // var material: MeshBasicMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
-    // var material2: MeshBasicMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
-    // var material3: MeshBasicMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
-
-    // var plane = new THREE.Mesh(geometry, material);
-    // var planeObj = new THREE.Object3D();
-    // planeObj.name = "plane";
-    // planeObj.add(plane);
-    // plane.rotation.x = - Math.PI / 2;
-
-    // var plane2 = plane.clone();
-    // plane2.material = material2;
-    // plane2.translateX(1.01);
-
-    // var plane3 = plane.clone();
-    // plane3.material = material3;
-    // plane3.translateX(-1.01);
-
-    // grid.add(plane);
-    // //grid.add(planeObj);
-    // grid.add(plane2);
-    // grid.add(plane3);
-
-    // scene.add(grid);
 }
 
 function createPanel() {
@@ -395,20 +368,7 @@ function onDocumentMouseMove( event ) {
 	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
-function mouseInteract() {
-    raycaster.setFromCamera(mouse, camera);
-    
-    var intersects = raycaster.intersectObjects(grid.treeObj.children);
-    if (intersects.length > 0) {
-        if (INTERSECTED != intersects[0].object) {
-            if (INTERSECTED) INTERSECTED.material.color.set(INTERSECTED.currentColor);
-            INTERSECTED = intersects[0].object;
-            console.log(INTERSECTED);
-            INTERSECTED.currentColor = INTERSECTED.material.color;
-            INTERSECTED.material.color.set(0xff0000);
-        }
-    } else {
-        if (INTERSECTED) INTERSECTED.material.color.set(0x000000);
-        INTERSECTED = null;
-    }
+function mouseInteract() 
+{
+    grid.mouseInteract(mouse, camera);
 }
