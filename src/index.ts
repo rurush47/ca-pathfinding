@@ -96,7 +96,8 @@ function init() {
     stats = new Stats();
     container.appendChild(stats.dom);
 
-    document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+    document.addEventListener('mousemove', onDocumentMouseMove, false );
+    document.addEventListener('mousedown', onDocumentMouseDown, false );
     window.addEventListener('resize', onWindowResize, false);
     //window.requestAnimationFrame(animate);
 }
@@ -371,4 +372,9 @@ function onDocumentMouseMove( event ) {
 function mouseInteract() 
 {
     grid.mouseInteract(mouse, camera);
+}
+
+function onDocumentMouseDown()
+{
+    grid.onMouseDown(mouse, camera);
 }

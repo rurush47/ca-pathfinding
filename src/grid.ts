@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import Cell from './cell';
+import { Vector2 } from 'three';
 
 export default class Grid
 {
     treeObj : THREE.Object3D;
     size : number;
     cellSize : number;
+    planeOffset : number;
     grid : Array<Array<Cell>>;
 
     //mouse interaction
@@ -54,8 +56,23 @@ export default class Grid
             } 
         }
         
-        this.treeObj.translateX(-this.size*this.cellSize/2);
-        this.treeObj.translateZ(-this.size*this.cellSize/2);
+        this.planeOffset = this.size*this.cellSize/2;
+
+        this.treeObj.translateX(-this.planeOffset);
+        this.treeObj.translateZ(-this.planeOffset);
+    }
+
+    toGridCoords(worldCoords : Vector2) : Vector2
+    {
+        return new Vector2(
+            Math.round(worldCoords.x / this.cellSize + this.planeOffset), 
+            Math.round(worldCoords.y / this.cellSize + this.planeOffset)
+            );
+    }
+
+    inGrid(x : number, y : number) : boolean
+    {
+        return x >= 0 && x < this.size && y > 0 && y < this.size;
     }
 
     mouseInteract(mouse , camera) : void 
@@ -68,13 +85,25 @@ export default class Grid
                 if(this.INTERSECTED) this.INTERSECTED.material.color.set(0x000000);
                 //if (INTERSECTED) INTERSECTED.material.color.set(INTERSECTED.currentColor);
                 this.INTERSECTED = intersects[0].object;
-                console.log(this.INTERSECTED);
+                //console.log(this.INTERSECTED);
                 this.INTERSECTED.currentColor = this.INTERSECTED.material.color;
                 this.INTERSECTED.material.color.set(0xff0000);
             }
         } else {
             if (this.INTERSECTED) this.INTERSECTED.material.color.set(0x000000);
             this.INTERSECTED = null;
+        }
+    }
+
+    onMouseDown(mouse, camera) : void 
+    {
+        this.raycaster.setFromCamera(mouse, camera);
+
+        var intersects = this.raycaster.intersectObjects(this.treeObj.children);
+        if (intersects.length > 0) 
+        {
+            var vec2 : Vector2 = new Vector2(intersects[0].point.x, intersects[0].point.z);
+            console.log(this.toGridCoords(vec2));
         }
     }
 }
