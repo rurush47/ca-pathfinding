@@ -82,7 +82,7 @@ export default class Grid
 
     inGrid(x : number, y : number) : boolean
     {
-        return x >= 0 && x < this.size && y > 0 && y < this.size;
+        return x >= 0 && x < this.size && y >= 0 && y < this.size;
     }
 
     getNeighbors(cell : Cell) : Array<Cell>
