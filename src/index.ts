@@ -21,6 +21,7 @@ var singleStepMode = false;
 var sizeOfNextStep = 0;
 var mouse = new THREE.Vector2();
 var inputController : InputController;
+var models : Array<Soldier> = Array();
 
 init();
 
@@ -75,17 +76,18 @@ function init() {
             runAction = mixer.clipAction(animations[1]);
             actions = [idleAction, walkAction, runAction];
 
-            createPanel();scene
+            createPanel();
             activateAllActions();
             animate();
         });
     })
 
     var sold = new Soldier();
-    sold.init((model2, skeleton2) => 
+    sold.init((soldier : Soldier) => 
     {
-        scene.add(model2);
-        scene.add(skeleton2);
+        scene.add(soldier.model);
+        scene.add(soldier.skeleton);
+        models.push(soldier);
     });
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -345,6 +347,13 @@ function onWindowResize() {
 function animate() {
     // Render loop
     requestAnimationFrame(animate);
+
+    var delta = clock.getDelta();
+
+    models.forEach(model => {
+        model.update(delta);
+    });
+
     idleWeight = idleAction.getEffectiveWeight();
     walkWeight = walkAction.getEffectiveWeight();
     runWeight = runAction.getEffectiveWeight();
@@ -353,14 +362,13 @@ function animate() {
     // Enable/disable crossfade controls according to current weight values
     updateCrossFadeControls();
     // Get the time elapsed since the last frame, used for mixer update (if not in single step mode)
-    var mixerUpdateDelta = clock.getDelta();
     // If in single step mode, make one step and then do nothing (until the user clicks again)
-    if (singleStepMode) {
-        mixerUpdateDelta = sizeOfNextStep;
+    if ( singleStepMode ) {
+        delta = sizeOfNextStep;
         sizeOfNextStep = 0;
     }
     // Update the animation mixer, the stats panel, and render this frame
-    mixer.update(mixerUpdateDelta);
+    mixer.update( delta );
     stats.update();
 
     mouseInteract();

@@ -25,7 +25,7 @@ export default class Soldier
         
     }
 
-    init(onComplete : (model, skeleton) => void)
+    init(onComplete : (solder) => void)
     {
         this.loader = new GLTFLoader();
         this.loader.load('resources/Soldier.glb', (gltf) => this.loadModel(gltf, this, onComplete));
@@ -50,22 +50,40 @@ export default class Soldier
         sold.runAction = sold.mixer.clipAction(animations[1]);
         sold.actions = [sold.idleAction, sold.walkAction, sold.runAction];
 
+        this.showModel(true);
+        //this.createPanel();
+        this.createSettings();
+        this.activateAllActions();
         //createPanel();
         //activateAllActions();
         //animate();
 
-        onComplete(sold.model, sold.skeleton);
+        onComplete(this);
     }
 
+    update(deltaTime) : void
+    {
+        this.idleWeight = this.idleAction.getEffectiveWeight();
+        this.walkWeight = this.walkAction.getEffectiveWeight();
+        this.runWeight = this.runAction.getEffectiveWeight();
+        // Update the panel values if weights are modified from "outside" (by crossfadings)
+        this.updateWeightSliders();
+        // Enable/disable crossfade controls according to current weight values
+        //this.updateCrossFadeControls();
+        
+        // Get the time elapsed since the last frame, used for mixer update (if not in single step mode)
+        var mixerUpdateDelta = deltaTime;
+        // If in single step mode, make one step and then do nothing (until the user clicks again)
+        if (this.singleStepMode) {
+            mixerUpdateDelta = this.sizeOfNextStep;
+            this.sizeOfNextStep = 0;
+        }
+        // Update the animation mixer, the stats panel, and render this frame
+        this.mixer.update(mixerUpdateDelta);
+    }
 
-    createPanel() {
-        var panel = new GUI({ width: 310 });
-        var folder1 = panel.addFolder('Visibility');
-        var folder2 = panel.addFolder('Activation/Deactivation');
-        var folder3 = panel.addFolder('Pausing/Stepping');
-        var folder4 = panel.addFolder('Crossfading');
-        var folder5 = panel.addFolder('Blend Weights');
-        var folder6 = panel.addFolder('General Speed');
+    createSettings()
+    {
         this.settings = {
             'show model': true,
             'show skeleton': false,
@@ -92,7 +110,20 @@ export default class Soldier
             'modify walk weight': 1.0,
             'modify run weight': 0.0,
             'modify time scale': 1.0
-        };
+        };   
+    }
+
+    createPanel() {
+        var panel = new GUI({ width: 310 });
+        var folder1 = panel.addFolder('Visibility');
+        var folder2 = panel.addFolder('Activation/Deactivation');
+        var folder3 = panel.addFolder('Pausing/Stepping');
+        var folder4 = panel.addFolder('Crossfading');
+        var folder5 = panel.addFolder('Blend Weights');
+        var folder6 = panel.addFolder('General Speed');
+
+        this.createSettings();
+
         folder1.add(this.settings, 'show model').onChange(this.showModel);
         folder1.add(this.settings, 'show skeleton').onChange(this.showSkeleton);
         folder2.add(this.settings, 'deactivate all');
