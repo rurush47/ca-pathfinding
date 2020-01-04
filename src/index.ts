@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js'
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Scene, Renderer, PerspectiveCamera, WebGLRenderer, PlaneGeometry, MeshBasicMaterial, Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import ModelLoader from './ModelLoader'
+import ModelLoader from './modelLoader'
 import Grid from './grid';
 import InputController from './inputController';
+import Soldier from './soldier';
 
 var scene: Scene;
 var renderer: WebGLRenderer;
@@ -19,7 +19,7 @@ var idleWeight, walkWeight, runWeight;
 var actions, settings;
 var singleStepMode = false;
 var sizeOfNextStep = 0;
-var mouse = new THREE.Vector2(), INTERSECTED;
+var mouse = new THREE.Vector2();
 var inputController : InputController;
 
 init();
@@ -53,21 +53,20 @@ function init() {
     mesh.receiveShadow = true;
     scene.add(mesh);
 
-    var loader = new GLTFLoader();
     var modelLoader: ModelLoader;
     modelLoader = new ModelLoader('resources/Soldier.glb', function loadModel(gltf) {
         return new Promise(resolve => {
             model = gltf.scene;
-            scene.add(model);
-            model.traverse(function (object) {
-                if (object.isMesh) object.castShadow = true;
-            });
+            scene.add( model );
+            model.traverse( function ( object ) {
+                if ( object.isMesh ) object.castShadow = true;
+            } );
             //
-            skeleton = new THREE.SkeletonHelper(model);
+            skeleton = new THREE.SkeletonHelper( model );
             skeleton.visible = false;
+            scene.add( skeleton );
 
-            var soldObj = new THREE.Object3D();
-            soldObj.add(skeleton);
+            model.translateX(3);
 
             var animations = gltf.animations;
             mixer = new THREE.AnimationMixer(model);
@@ -76,11 +75,18 @@ function init() {
             runAction = mixer.clipAction(animations[1]);
             actions = [idleAction, walkAction, runAction];
 
-            createPanel();
+            createPanel();scene
             activateAllActions();
             animate();
         });
     })
+
+    var sold = new Soldier();
+    sold.init((model2, skeleton2) => 
+    {
+        scene.add(model2);
+        scene.add(skeleton2);
+    });
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
