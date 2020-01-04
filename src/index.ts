@@ -6,6 +6,7 @@ import { Scene, Renderer, PerspectiveCamera, WebGLRenderer, PlaneGeometry, MeshB
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import ModelLoader from './ModelLoader'
 import Grid from './grid';
+import InputController from './inputController';
 
 var scene: Scene;
 var renderer: WebGLRenderer;
@@ -19,7 +20,7 @@ var actions, settings;
 var singleStepMode = false;
 var sizeOfNextStep = 0;
 var mouse = new THREE.Vector2(), INTERSECTED;
-var raycaster;
+var inputController : InputController;
 
 init();
 
@@ -81,7 +82,6 @@ function init() {
         });
     })
 
-    raycaster = new THREE.Raycaster();
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -92,6 +92,8 @@ function init() {
 
     addOrbitControl();
     addGrid();
+
+    inputController = new InputController(grid);
 
     stats = Stats();
     container.appendChild(stats.dom);
@@ -371,10 +373,10 @@ function onDocumentMouseMove( event ) {
 
 function mouseInteract() 
 {
-    grid.mouseInteract(mouse, camera);
+    inputController.mouseInteract(mouse, camera);
 }
 
 function onDocumentMouseDown()
 {
-    grid.onMouseDown(mouse, camera);
+    inputController.onMouseDown(mouse, camera);
 }

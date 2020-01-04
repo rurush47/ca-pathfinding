@@ -9,12 +9,8 @@ export default class Grid
     size : number;
     cellSize : number;
     planeOffset : number;
-    grid : Array<Array<Cell>>;
+    cellGrid : Array<Array<Cell>>;
     pathfinder : Pathfinder;
-
-    //mouse interaction
-    raycaster : THREE.Raycaster;
-    INTERSECTED;
 
     constructor(size : number, cellSize : number)
     {
@@ -29,15 +25,15 @@ export default class Grid
 
     init() : void
     {
-        this.raycaster = new THREE.Raycaster();
+        
     }
 
     generateGrid() : void
     {
-        this.grid = new Array(this.size);
+        this.cellGrid = new Array(this.size);
 
-        for (var i = 0; i < this.grid.length; i++) { 
-            this.grid[i] = new Array(this.size); 
+        for (var i = 0; i < this.cellGrid.length; i++) { 
+            this.cellGrid[i] = new Array(this.size); 
         } 
           
         var geometry : THREE.PlaneGeometry = new THREE.PlaneGeometry(1, 1, 1);
@@ -57,7 +53,7 @@ export default class Grid
                 this.treeObj.add(planeMesh);
 
                 newCell.mesh = planeMesh;
-                this.grid[i][j] = newCell;
+                this.cellGrid[i][j] = newCell;
             } 
         }
         
@@ -77,7 +73,7 @@ export default class Grid
 
     isValid(x : number, y : number) : boolean
     {
-        return this.inGrid(x, y) && !this.grid[x][y].isObstacle;
+        return this.inGrid(x, y) && !this.cellGrid[x][y].isObstacle;
     }
 
     inGrid(x : number, y : number) : boolean
@@ -103,7 +99,7 @@ export default class Grid
 
                 if(this.isValid(x, y))
                 {
-                    var gridCell = this.grid[x][y];
+                    var gridCell = this.cellGrid[x][y];
                     neighbors.push(gridCell);
                 }
             }       
@@ -112,67 +108,12 @@ export default class Grid
         return neighbors;
     }
 
-    mouseInteract(mouse , camera) : void 
-    {
-        this.raycaster.setFromCamera(mouse, camera);
-        
-        var intersects = this.raycaster.intersectObjects(this.treeObj.children);
-        if (intersects.length > 0) {
-            if (this.INTERSECTED != intersects[0].object) {
-                if(this.INTERSECTED) this.INTERSECTED.material.color.set(0x000000);
-                //if (INTERSECTED) INTERSECTED.material.color.set(INTERSECTED.currentColor);
-                this.INTERSECTED = intersects[0].object;
-                //console.log(this.INTERSECTED);
-                this.INTERSECTED.currentColor = this.INTERSECTED.material.color;
-                this.INTERSECTED.material.color.set(0xff0000);
-            }
-        } else {
-            if (this.INTERSECTED) this.INTERSECTED.material.color.set(0x000000);
-            this.INTERSECTED = null;
-        }
-    }
-
-    onMouseDown(mouse, camera) : void 
-    {
-        this.raycaster.setFromCamera(mouse, camera);
-
-        var intersects = this.raycaster.intersectObjects(this.treeObj.children);
-        if (intersects.length > 0) 
-        {
-            var vec2 : Vector2 = new Vector2(intersects[0].point.x, intersects[0].point.z);
-            vec2 = this.toGridCoords(vec2);
-            console.log(vec2);
-
-            if(this.firstClick)
-            {
-                this.cell1 = this.grid[vec2.x][vec2.y];
-                this.firstClick = false;       
-            }
-            else
-            {
-                this.cell2 = this.grid[vec2.x][vec2.y];
-
-                var path = this.pathfinder.aStar(this.cell1, this.cell2, this);
-                path.forEach(cell => {
-                    var material : MeshBasicMaterial = <MeshBasicMaterial>cell.mesh.material;
-                    material.color.set(0x03FC20); 
-                });
-
-                this.firstClick = true;
-            }
-        }
-    }
-
     getCell(x : number, y : number) : Cell
     {
         if(this.inGrid(x, y))
         {
-            return this.grid[x][y];
+            return this.cellGrid[x][y];
         }
         return null;
     }
-
-    cell1;
-    cell2;
-    firstClick = true;
 }
