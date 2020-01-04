@@ -85,7 +85,7 @@ function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.gammaOutput = true;
+    //renderer. = true;
     renderer.gammaFactor = 2.2;
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
@@ -93,7 +93,7 @@ function init() {
     addOrbitControl();
     addGrid();
 
-    stats = new Stats();
+    stats = Stats();
     container.appendChild(stats.dom);
 
     document.addEventListener('mousemove', onDocumentMouseMove, false );
