@@ -1,4 +1,4 @@
-import { Object3D, SkeletonHelper, AnimationMixer } from "three";
+import { Object3D, SkeletonHelper, AnimationMixer, Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 
@@ -19,6 +19,12 @@ export default class Soldier
     crossFadeControls = [];
     singleStepMode = false;
     sizeOfNextStep = 0;
+
+    currentPosition : Vector3 = new Vector3(0, 0, 0);
+    velocity : Vector3 = new Vector3(0, 0, 0);
+    maxVelocity : number = 1;
+    maxForce : number = 1;
+    maxSpeed : number = 1;
 
     constructor()
     {
@@ -50,19 +56,42 @@ export default class Soldier
         sold.runAction = sold.mixer.clipAction(animations[1]);
         sold.actions = [sold.idleAction, sold.walkAction, sold.runAction];
 
-        this.showModel(true);
+        sold.showModel(true);
         //this.createPanel();
-        this.createSettings();
-        this.activateAllActions();
+        sold.createSettings();
+        sold.activateAllActions();
         //createPanel();
         //activateAllActions();
         //animate();
+        sold.model.translateX(-1);
 
         onComplete(this);
     }
 
+
+    target : Vector3 = new Vector3(5, 0, 0);
+    movementUpdate(deltaTime)
+    {
+        if(this.currentPosition.clone().distanceTo(this.target) < 0.1)
+        {
+            return;
+        }
+
+        var desiredVelocity = (this.target.clone().sub(this.currentPosition)).normalize().multiplyScalar(this.maxVelocity);
+        var steering = desiredVelocity.clone().sub(this.velocity);
+
+        steering = steering.clampLength(0, this.maxForce);
+        this.velocity = (this.velocity.clone().add(steering)).clampLength(0, this.maxSpeed).multiplyScalar(deltaTime);
+        this.currentPosition.add(this.velocity);
+        this.model.position.set(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
+
+        this.model.lookAt(this.velocity);
+    }
+
     update(deltaTime) : void
     {
+        this.movementUpdate(deltaTime);
+
         this.idleWeight = this.idleAction.getEffectiveWeight();
         this.walkWeight = this.walkAction.getEffectiveWeight();
         this.runWeight = this.runAction.getEffectiveWeight();
@@ -70,7 +99,7 @@ export default class Soldier
         this.updateWeightSliders();
         // Enable/disable crossfade controls according to current weight values
         //this.updateCrossFadeControls();
-        
+
         // Get the time elapsed since the last frame, used for mixer update (if not in single step mode)
         var mixerUpdateDelta = deltaTime;
         // If in single step mode, make one step and then do nothing (until the user clicks again)
