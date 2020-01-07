@@ -1,4 +1,4 @@
-import { Object3D, SkeletonHelper, AnimationMixer, Vector3 } from "three";
+import { Object3D, SkeletonHelper, AnimationMixer, Vector3, Matrix4 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import TWEEN from '@tweenjs/tween.js';
@@ -69,28 +69,29 @@ export default class Soldier
         onComplete(this);
     }
 
-    setTarget() : void 
+    target : Vector3 = new Vector3(5, 0, 0);
+    currentFacing : Vector3 = new Vector3(0, 0, 1);
+    elapsedTime : number = 0;
+
+    setTarget(target : Vector3) : void 
     {
-        const coords = { x: 0, y: 0 }; // Start at (0, 0)
-        const tween = new TWEEN.Tween(coords) // Create a new tween that modifies 'coords'.
-        .to({ x: 300, y: 200 }, 1000) // Move to (300, 200) in 1 second.
-        .easing(TWEEN.Easing.Quadratic.Out) // Use an easing function to make the animation smooth.
-        .onUpdate(() => { // Called after tween.js updates 'coords'.
-            // Move 'box' to the position described by 'coords' with a CSS translation.
-            this.currentPosition.set(coords.x, 0, coords.y);
-            console.log("xd");
+        //set the target
+        this.target = target;
+
+        //rotate towards target
+        const tween = new TWEEN.Tween(this.currentFacing)
+        .to(this.target.clone().sub(this.currentPosition).multiplyScalar(-1) , 1000)
+        //.easing(TWEEN.Easing.Quadratic.Out) // Use an easing function to make the animation smooth.
+        .onUpdate(() => 
+        {
+            var mx = new Matrix4().lookAt(this.currentFacing, new Vector3(0,0,0), new Vector3(0,1,0));
+            this.model.quaternion.setFromRotationMatrix(mx);
         })
         .start();
     }
 
-    target : Vector3 = new Vector3(5, 0, 0);
-    elapsedTime : number = 0;
-    
     movementUpdate(deltaTime)
     {
-        this.elapsedTime += deltaTime;
-        TWEEN.update(this.elapsedTime);
-
         if(this.currentPosition.clone().distanceTo(this.target) < 0.1)
         {
             return;
@@ -104,7 +105,13 @@ export default class Soldier
         this.currentPosition.add(this.velocity);
         this.model.position.set(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
 
-        this.model.lookAt(this.velocity);
+        //rotation
+        //var targetLookAt = this.target.clone().sub(this.currentPosition).normalize();
+        //console.log(targetLookAt);
+        //this.model.lookAt(this.velocity);
+
+        // var mx = new Matrix4().lookAt(this.velocity.clone().multiplyScalar(-1),new Vector3(0,0,0),new Vector3(0,1,0));
+        // this.model.quaternion.setFromRotationMatrix(mx);
     }
 
     update(deltaTime) : void

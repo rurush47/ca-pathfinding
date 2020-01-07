@@ -89,6 +89,7 @@ function init() {
         scene.add(soldier.model);
         scene.add(soldier.skeleton);
         models.push(soldier);
+        inputController.initSold(soldier);
     });
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -388,23 +389,7 @@ function onDocumentKeyDown(event)
     var keyCode = event.which;
     if(keyCode == 74)
     {
-        models[0].setTarget();
-
-        let tweenElement = {
-            x: 0,
-            y: 0
-        }
-
-        let tween = new TWEEN.Tween(tweenElement)
-                .to({y : 10}
-                    , 1000)
-                .easing( TWEEN.Easing.Cubic.InOut )
-                .onUpdate(function(){
-                    console.log("lol");
-                })
-                .onComplete(function(){
-                    console.log("cp");
-                });
+        models[0].setTarget(new Vector3(0, 0, 2));
     }
 }
 

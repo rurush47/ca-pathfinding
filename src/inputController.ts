@@ -1,6 +1,7 @@
 import Grid from "./grid";
-import { Vector2, MeshBasicMaterial, Raycaster } from "three";
+import { Vector2, MeshBasicMaterial, Raycaster, Vector3 } from "three";
 import Pathfinder from "./pathfinder";
+import Soldier from "./soldier";
 
 export default class InputController
 {
@@ -12,10 +13,16 @@ export default class InputController
     }
 
     //mouse interaction
+    soldier : Soldier;
     pathfinder : Pathfinder;
     grid : Grid;
     raycaster : THREE.Raycaster;
     INTERSECTED;    
+
+    initSold(sold : Soldier) : void 
+    {
+        this.soldier = sold;
+    }
 
     mouseInteract(mouse , camera) : void 
     {
@@ -50,17 +57,19 @@ export default class InputController
         if (intersects.length > 0) 
         {
             var vec2 : Vector2 = new Vector2(intersects[0].point.x, intersects[0].point.z);
-            vec2 = this.grid.toGridCoords(vec2);
+            var griDvec2 = this.grid.toGridCoords(vec2);
             console.log(vec2);
 
             if(this.firstClick)
             {
-                this.cell1 = this.grid.cellGrid[vec2.x][vec2.y];
+                this.cell1 = this.grid.cellGrid[griDvec2.x][griDvec2.y];
                 this.firstClick = false;       
+
+                this.soldier.setTarget(new Vector3(vec2.x, 0, vec2.y));
             }
             else
             {
-                this.cell2 = this.grid.cellGrid[vec2.x][vec2.y];
+                this.cell2 = this.grid.cellGrid[griDvec2.x][griDvec2.y];
 
                 var path = this.pathfinder.aStar(this.cell1, this.cell2, this.grid);
                 path.forEach(cell => {
