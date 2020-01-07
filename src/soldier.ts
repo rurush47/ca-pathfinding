@@ -1,6 +1,7 @@
 import { Object3D, SkeletonHelper, AnimationMixer, Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
+import TWEEN from '@tweenjs/tween.js';
 
 export default class Soldier
 {
@@ -70,11 +71,26 @@ export default class Soldier
 
     setTarget() : void 
     {
+        const coords = { x: 0, y: 0 }; // Start at (0, 0)
+        const tween = new TWEEN.Tween(coords) // Create a new tween that modifies 'coords'.
+        .to({ x: 300, y: 200 }, 1000) // Move to (300, 200) in 1 second.
+        .easing(TWEEN.Easing.Quadratic.Out) // Use an easing function to make the animation smooth.
+        .onUpdate(() => { // Called after tween.js updates 'coords'.
+            // Move 'box' to the position described by 'coords' with a CSS translation.
+            this.currentPosition.set(coords.x, 0, coords.y);
+            console.log("xd");
+        })
+        .start();
     }
 
     target : Vector3 = new Vector3(5, 0, 0);
+    elapsedTime : number = 0;
+    
     movementUpdate(deltaTime)
     {
+        this.elapsedTime += deltaTime;
+        TWEEN.update(this.elapsedTime);
+
         if(this.currentPosition.clone().distanceTo(this.target) < 0.1)
         {
             return;

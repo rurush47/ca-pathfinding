@@ -7,6 +7,7 @@ import ModelLoader from './modelLoader'
 import Grid from './grid';
 import InputController from './inputController';
 import Soldier from './soldier';
+import TWEEN from '@tweenjs/tween.js';
 
 var scene: Scene;
 var renderer: WebGLRenderer;
@@ -345,12 +346,17 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+var elapsedTime : number = 0;
+
 function animate() {
     // Render loop
     requestAnimationFrame(animate);
 
     var delta = clock.getDelta();
+    elapsedTime += delta;
 
+    //update all objects
+    TWEEN.update();
     models.forEach(model => {
         model.update(delta);
     });
@@ -383,6 +389,22 @@ function onDocumentKeyDown(event)
     if(keyCode == 74)
     {
         models[0].setTarget();
+
+        let tweenElement = {
+            x: 0,
+            y: 0
+        }
+
+        let tween = new TWEEN.Tween(tweenElement)
+                .to({y : 10}
+                    , 1000)
+                .easing( TWEEN.Easing.Cubic.InOut )
+                .onUpdate(function(){
+                    console.log("lol");
+                })
+                .onComplete(function(){
+                    console.log("cp");
+                });
     }
 }
 
