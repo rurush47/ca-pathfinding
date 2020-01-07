@@ -68,6 +68,9 @@ export default class Soldier
         onComplete(this);
     }
 
+    setTarget() : void 
+    {
+    }
 
     target : Vector3 = new Vector3(5, 0, 0);
     movementUpdate(deltaTime)

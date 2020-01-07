@@ -108,6 +108,7 @@ function init() {
 
     document.addEventListener('mousemove', onDocumentMouseMove, false );
     document.addEventListener('mousedown', onDocumentMouseDown, false );
+    document.addEventListener('keydown', onDocumentKeyDown, false);
     window.addEventListener('resize', onWindowResize, false);
     //window.requestAnimationFrame(animate);
 }
@@ -374,6 +375,15 @@ function animate() {
     mouseInteract();
 
     renderer.render(scene, camera);
+}
+
+function onDocumentKeyDown(event) 
+{
+    var keyCode = event.which;
+    if(keyCode == 74)
+    {
+        models[0].setTarget();
+    }
 }
 
 function onDocumentMouseMove( event ) {
