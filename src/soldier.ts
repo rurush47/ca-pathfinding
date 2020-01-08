@@ -41,14 +41,13 @@ export default class Soldier
     loadModel(gltf, sold, onComplete)
     {
         sold.model = gltf.scene;
-        //scene.add( this.model );
+
         sold.model.traverse( function ( object ) {
             if ( object.isMesh ) object.castShadow = true;
         });
         //
         sold.skeleton = new SkeletonHelper(sold.model);
         sold.skeleton.visible = false;
-        //scene.add( skeleton );
 
         var animations = gltf.animations;
         sold.mixer = new AnimationMixer(sold.model);
@@ -58,16 +57,10 @@ export default class Soldier
         sold.actions = [sold.idleAction, sold.walkAction, sold.runAction];
 
         sold.showModel(true);
-        //this.createPanel();
         sold.createSettings();
         sold.activateAllActions();
-        sold.setAnimations(0.02);
-        //createPanel();
-        //activateAllActions();
-        //animate();
-        //sold.model.translateX(-1);
-
-        //sold.prepareCrossFade(this.walkAction, this.idleAction, 0.5);
+        sold.setAnimations(0);
+        
         onComplete(this);
     }
 
@@ -210,7 +203,6 @@ export default class Soldier
 
     setAnimations(value : number)
     {
-        console.log(value);
         this.setWeight(this.idleAction, this.getIdleValue(value));
         this.setWeight(this.walkAction, this.getWalkValue(value));
         this.setWeight(this.runAction, this.getRunValue(value));
