@@ -60,25 +60,32 @@ export default class InputController
             var griDvec2 = this.grid.toGridCoords(vec2);
             console.log(vec2);
 
-            if(this.firstClick)
-            {
-                this.cell1 = this.grid.cellGrid[griDvec2.x][griDvec2.y];
-                this.firstClick = false;       
+            var soldGridCoords = this.grid.toGridCoordsVec3(this.soldier.model.position);
+            var startCell = this.grid.cellGrid[soldGridCoords.x][soldGridCoords.y]; 
+            var endCell = this.grid.cellGrid[griDvec2.x][griDvec2.y];
+            var path = this.pathfinder.aStar(startCell, endCell, this.grid);
+            this.soldier.setPath(path);
 
-                this.soldier.setTarget(new Vector3(vec2.x, 0, vec2.y));
-            }
-            else
-            {
-                this.cell2 = this.grid.cellGrid[griDvec2.x][griDvec2.y];
+            // if(this.firstClick)
+            // {
+            //     this.cell1 = this.grid.cellGrid[griDvec2.x][griDvec2.y];
+            //     this.firstClick = false;       
+            // }
+            // else
+            // {
+            //     this.cell2 = this.grid.cellGrid[griDvec2.x][griDvec2.y];
 
-                var path = this.pathfinder.aStar(this.cell1, this.cell2, this.grid);
-                path.forEach(cell => {
-                    var material : MeshBasicMaterial = <MeshBasicMaterial>cell.mesh.material;
-                    material.color.set(0x03FC20); 
-                });
+            //     var path = this.pathfinder.aStar(this.cell1, this.cell2, this.grid);
+            //     path.forEach(cell => {
+            //         var material : MeshBasicMaterial = <MeshBasicMaterial>cell.mesh.material;
+            //         material.color.set(0x03FC20); 
+            //     });
 
-                this.firstClick = true;
-            }
+            //     this.firstClick = true;
+
+            //     //this.soldier.setTarget(new Vector3(vec2.x, 0, vec2.y));
+            //     this.soldier.setPath(path);
+            // }
         }
     }
 }

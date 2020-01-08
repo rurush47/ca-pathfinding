@@ -1,19 +1,20 @@
-import { Object3D, SkeletonHelper, AnimationMixer, Vector3, Matrix4 } from "three";
+import { Object3D, SkeletonHelper, AnimationMixer, Vector3, Matrix4, MeshBasicMaterial } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import TWEEN from '@tweenjs/tween.js';
+import Cell from "./cell";
 
 export default class Soldier
 {
     model : Object3D;
     skeleton;
-    mixer;
+    mixer : AnimationMixer;
     idleAction;
     walkAction;
     runAction;
-    idleWeight;
-    walkWeight;
-    runWeight;
+    idleWeight : number;
+    walkWeight : number;
+    runWeight : number;
     actions;
     loader : GLTFLoader;
     settings;
@@ -23,9 +24,8 @@ export default class Soldier
 
     currentPosition : Vector3 = new Vector3(0, 0, 0);
     velocity : Vector3 = new Vector3(0, 0, 0);
-    maxVelocity : number = 1;
-    maxForce : number = 1;
-    maxSpeed : number = 1;
+    maxVelocity : number = 2;
+    maxForce : number = 0.1;
 
     constructor()
     {
@@ -66,21 +66,57 @@ export default class Soldier
         //animate();
         sold.model.translateX(-1);
 
+        //sold.prepareCrossFade(this.walkAction, this.idleAction, 0.5);
         onComplete(this);
     }
 
-    target : Vector3 = new Vector3(5, 0, 0);
+    target : Vector3 = new Vector3(0, 0, 0);
     currentFacing : Vector3 = new Vector3(0, 0, 1);
     elapsedTime : number = 0;
+    targetDistance : number;
+    //path follow
+    currentPath : Array<Cell> = new Array<Cell>();
+    currentIndex : number = 1;
+    targetRadius : number = 0.5;
+
+    setPath(path : Array<Cell>) : void
+    {
+        this.currentPath = path;
+        this.currentIndex = 1;
+        this.followNextTarget();
+
+        //highlight path
+        path.forEach(cell => {
+            var material : MeshBasicMaterial = <MeshBasicMaterial>cell.mesh.material;
+            material.color.set(0x03FC20); 
+        });
+    }
+
+    followNextTarget() : void
+    {
+        if(this.currentPath == null || 
+           this.currentIndex >= this.currentPath.length)
+        {
+            return;
+        }
+
+        this.setTarget(this.currentPath[this.currentIndex].worldCoords);
+        this.currentIndex++;
+    }
+
+    targetReached() : void
+    {
+
+    }
 
     setTarget(target : Vector3) : void 
     {
         //set the target
         this.target = target;
-
+        this.targetDistance = target.distanceTo(this.currentPosition);
         //rotate towards target
         const tween = new TWEEN.Tween(this.currentFacing)
-        .to(this.target.clone().sub(this.currentPosition).multiplyScalar(-1) , 1000)
+        .to(this.target.clone().sub(this.currentPosition).multiplyScalar(-1) , 300)
         //.easing(TWEEN.Easing.Quadratic.Out) // Use an easing function to make the animation smooth.
         .onUpdate(() => 
         {
@@ -88,6 +124,31 @@ export default class Soldier
             this.model.quaternion.setFromRotationMatrix(mx);
         })
         .start();
+
+        //idle
+        // var weigth = {w : 1};
+        // const tween2 = new TWEEN.Tween(weigth)
+        // .to({w : 0} , 1000)
+        // .onUpdate(()=>{
+        //     //console.log(weigth.w);
+        //     this.walkWeight = weigth.w;
+        //     this.setWeight(this.walkAction, this.walkWeight);
+        // })
+        // .start();
+
+        //this.prepareCrossFade(this.walkAction, this.idleAction, 0.5);
+    }
+
+    getIdleValue(normalizedValue : number) : number
+    {
+        normalizedValue *= Math.PI;
+        return -Math.sin(normalizedValue) + 1;
+    }
+    
+    getWalkValue(normalizedValue : number) : number
+    {
+        normalizedValue *= Math.PI;
+        return Math.sin(normalizedValue);
     }
 
     movementUpdate(deltaTime)
@@ -101,17 +162,33 @@ export default class Soldier
         var steering = desiredVelocity.clone().sub(this.velocity);
 
         steering = steering.clampLength(0, this.maxForce);
-        this.velocity = (this.velocity.clone().add(steering)).clampLength(0, this.maxSpeed).multiplyScalar(deltaTime);
-        this.currentPosition.add(this.velocity);
+        this.velocity = (this.velocity.clone().add(steering)).clampLength(0, this.maxVelocity);
+        this.currentPosition.add(this.velocity.clone().multiplyScalar(deltaTime));
         this.model.position.set(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
 
+        //console.log(this.velocity.length());
         //rotation
         //var targetLookAt = this.target.clone().sub(this.currentPosition).normalize();
         //console.log(targetLookAt);
         //this.model.lookAt(this.velocity);
-
         // var mx = new Matrix4().lookAt(this.velocity.clone().multiplyScalar(-1),new Vector3(0,0,0),new Vector3(0,1,0));
         // this.model.quaternion.setFromRotationMatrix(mx);
+
+        
+        var currentDistance = this.currentPosition.distanceTo(this.target);
+
+        //target reached
+        if(currentDistance < this.targetRadius)
+        {
+            this.followNextTarget();
+            return;
+        }
+        //
+
+        var normalizedDistance = currentDistance / this.targetDistance;
+        //console.log(normalizedDistance)
+        this.setWeight(this.idleAction, this.getIdleValue(normalizedDistance));
+        this.setWeight(this.walkAction, this.getWalkValue(normalizedDistance));
     }
 
     update(deltaTime) : void
@@ -305,11 +382,12 @@ setCrossFadeDuration(defaultDuration) {
 }
 
 synchronizeCrossFade(startAction, endAction, duration) {
+    var sold = this;
     this.mixer.addEventListener('loop', onLoopFinished);
     function onLoopFinished(event) {
         if (event.action === startAction) {
-            this.mixer.removeEventListener('loop', onLoopFinished);
-            this.executeCrossFade(startAction, endAction, duration);
+            sold.mixer.removeEventListener('loop', onLoopFinished);
+            sold.executeCrossFade(startAction, endAction, duration);
         }
     }
 }

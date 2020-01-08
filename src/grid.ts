@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import Cell from './cell';
-import { Vector2, Material, MeshBasicMaterial } from 'three';
+import { Vector2, Material, MeshBasicMaterial, Vector3 } from 'three';
 import Pathfinder from './pathfinder';
 
 export default class Grid
@@ -30,6 +30,7 @@ export default class Grid
 
     generateGrid() : void
     {
+        this.planeOffset = this.size*this.cellSize/2;
         this.cellGrid = new Array(this.size);
 
         for (var i = 0; i < this.cellGrid.length; i++) { 
@@ -54,13 +55,17 @@ export default class Grid
 
                 newCell.mesh = planeMesh;
                 this.cellGrid[i][j] = newCell;
+                this.cellGrid[i][j].worldCoords = this.toWorldCoords(new Vector2(i, j));
             } 
-        }
-        
-        this.planeOffset = this.size*this.cellSize/2;
+        }        
 
         this.treeObj.translateX(-this.planeOffset);
         this.treeObj.translateZ(-this.planeOffset);
+    }
+
+    toGridCoordsVec3(worldCoords : Vector3) : Vector2
+    {
+        return this.toGridCoords(new Vector2(worldCoords.x, worldCoords.z))
     }
 
     toGridCoords(worldCoords : Vector2) : Vector2
@@ -69,6 +74,15 @@ export default class Grid
             Math.round(worldCoords.x / this.cellSize + this.planeOffset), 
             Math.round(worldCoords.y / this.cellSize + this.planeOffset)
             );
+    }
+
+    toWorldCoords(gridCoords : Vector2) : Vector3
+    {
+        return new Vector3(
+            gridCoords.x * this.cellSize - this.planeOffset,
+            0, 
+            gridCoords.y * this.cellSize - this.planeOffset
+        )
     }
 
     isValid(x : number, y : number) : boolean

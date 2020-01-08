@@ -60,6 +60,7 @@ export default class Pathfinder
             totalPath.push(lastCell);
         }
 
+        totalPath.reverse();
         return totalPath;
     }
 
