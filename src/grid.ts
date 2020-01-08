@@ -130,4 +130,15 @@ export default class Grid
         }
         return null;
     }
+
+    clearColors() : void
+    {
+        this.cellGrid.forEach(row => 
+            {
+                row.forEach(c => {
+                    var mat = <MeshBasicMaterial>c.mesh.material;
+                    mat.color.set(0x000000)
+                })
+            })
+    }
 }

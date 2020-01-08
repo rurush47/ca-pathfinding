@@ -1,4 +1,4 @@
-import { Object3D, SkeletonHelper, AnimationMixer, Vector3, Matrix4, MeshBasicMaterial } from "three";
+import { Object3D, SkeletonHelper, AnimationMixer, Vector3, Matrix4, MeshBasicMaterial, Raycaster, Scene, LineBasicMaterial, Geometry, Line } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import TWEEN from '@tweenjs/tween.js';
@@ -21,19 +21,36 @@ export default class Soldier
     crossFadeControls = [];
     singleStepMode = false;
     sizeOfNextStep = 0;
+    scene : Scene;
 
+    //movement
     currentPosition : Vector3 = new Vector3(0, 0, 0);
     velocity : Vector3 = new Vector3(0, 0, 0);
     maxVelocity : number = 3;
     maxForce : number = 0.1;
+    target : Vector3 = new Vector3(0, 0, 0);
+    currentFacing : Vector3 = new Vector3(0, 0, 1);
+    elapsedTime : number = 0;
+    targetDistance : number;
+    //path follow
+    currentPath : Array<Cell> = new Array<Cell>();
+    currentIndex : number = 1;
+    targetRadius : number = 0.5;
+    slowRadius : number = 1;
+    lastTarget : Vector3 = new Vector3(0, 0, 0);
+    //avoid
+    maxSeeAhead : number = 5;
+    raycaster : Raycaster;
 
     constructor()
     {
         
     }
 
-    init(onComplete : (solder) => void)
+    init(scene : Scene, onComplete : (solder) => void)
     {
+        this.scene = scene;
+        this.raycaster = new Raycaster();
         this.loader = new GLTFLoader();
         this.loader.load('resources/Soldier.glb', (gltf) => this.loadModel(gltf, this, onComplete));
     }
@@ -60,20 +77,10 @@ export default class Soldier
         sold.createSettings();
         sold.activateAllActions();
         sold.setAnimations(0);
-        
+        this.createDebugLine();
+
         onComplete(this);
     }
-
-    target : Vector3 = new Vector3(0, 0, 0);
-    currentFacing : Vector3 = new Vector3(0, 0, 1);
-    elapsedTime : number = 0;
-    targetDistance : number;
-    //path follow
-    currentPath : Array<Cell> = new Array<Cell>();
-    currentIndex : number = 1;
-    targetRadius : number = 0.5;
-    slowRadius : number = 1;
-    lastTarget : Vector3 = new Vector3(0, 0, 0);
 
     setPath(path : Array<Cell>) : void
     {
@@ -89,7 +96,7 @@ export default class Soldier
         //highlight path
         path.forEach(cell => {
             var material : MeshBasicMaterial = <MeshBasicMaterial>cell.mesh.material;
-            material.color.set(0x03FC20); 
+            material.color.set(0xf1ff0d); 
         });
     }
 
@@ -125,19 +132,6 @@ export default class Soldier
             this.model.quaternion.setFromRotationMatrix(mx);
         })
         .start();
-
-        //idle
-        // var weigth = {w : 1};
-        // const tween2 = new TWEEN.Tween(weigth)
-        // .to({w : 0} , 1000)
-        // .onUpdate(()=>{
-        //     //console.log(weigth.w);
-        //     this.walkWeight = weigth.w;
-        //     this.setWeight(this.walkAction, this.walkWeight);
-        // })
-        // .start();
-
-        //this.prepareCrossFade(this.walkAction, this.idleAction, 0.5);
     }
 
     getIdleValue(normalizedValue : number) : number
@@ -179,14 +173,51 @@ export default class Soldier
         {
             desiredVelocity.normalize().multiplyScalar(this.maxVelocity);
         }
-        
+    
+
         var steering = desiredVelocity.clone().sub(this.velocity);
 
         steering = steering.clampLength(0, this.maxForce);
         this.velocity = (this.velocity.clone().add(steering)).clampLength(0, this.maxVelocity);
+
+
+        //=== collision avoidance ====
+        //var ahead : Vector3 = this.currentPosition.clone().add(this.velocity).normalize()
+        var ahead = this.currentFacing.clone().multiplyScalar(-1);
+        //.multiplyScalar(this.maxSeeAhead);
+        var start = this.currentPosition.clone().add(new Vector3(0, 0.3, 0));
+        var end = this.currentPosition.clone().add(new Vector3(0, 0.3, 0)).add(ahead);  
+        
+        this.updateDebugLine(start, end);
+        this.raycaster.set(start, ahead);
+        this.raycaster.far = this.maxSeeAhead;
+        //debug line
+
+        //
+
+        var intersects = this.raycaster.intersectObjects(this.scene.children)
+        {
+            if(intersects.length > 0)
+            {
+                //TODO prevent debug intersect
+                if(intersects[0].object != this.line)
+                {
+                    console.log("hit");
+                }
+            }
+        }
+        //raycast - may implement own collision function here
+
+
+
+        //============================
+
+
+        //===SET POSITION===
         this.currentPosition.add(this.velocity.clone().multiplyScalar(deltaTime));
         this.model.position.set(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
-        
+        //==================
+
         var currentDistance = this.currentPosition.distanceTo(this.target);
 
         var normalizedSpeed = this.velocity.length() / this.maxVelocity;
@@ -199,6 +230,29 @@ export default class Soldier
             this.followNextTarget();
             return;
         }
+    }
+
+    line;
+    createDebugLine()
+    {
+        //create a blue LineBasicMaterial
+        var material = new LineBasicMaterial( { color: 0x0000ff } );
+
+        var geometry = new Geometry();
+        geometry.vertices.push(new Vector3( 0, 0, 0) );
+        geometry.vertices.push(new Vector3( 0, 1, 0) );
+
+        this.line = new Line( geometry, material );
+        this.scene.add( this.line );
+    }
+
+    updateDebugLine(start : Vector3, end : Vector3)
+    {
+        this.line.geometry.vertices = [];
+        this.line.geometry.vertices.push(start);
+        this.line.geometry.vertices.push(end);
+
+        this.line.geometry.verticesNeedUpdate = true;
     }
 
     setAnimations(value : number)

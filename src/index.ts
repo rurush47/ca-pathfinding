@@ -56,7 +56,7 @@ function init() {
     scene.add(mesh);
 
     var sold = new Soldier();
-    sold.init((soldier : Soldier) => 
+    sold.init(scene, (soldier : Soldier) => 
     {
         scene.add(soldier.model);
         scene.add(soldier.skeleton);
@@ -74,7 +74,7 @@ function init() {
     addOrbitControl();
     addGrid();
 
-    inputController = new InputController(grid);
+    inputController = new InputController(grid, scene);
 
     stats = Stats();
     container.appendChild(stats.dom);
@@ -150,7 +150,7 @@ function mouseInteract()
     inputController.mouseInteract(mouse, camera);
 }
 
-function onDocumentMouseDown()
+function onDocumentMouseDown(event)
 {
-    inputController.onMouseDown(mouse, camera);
+    inputController.onMouseDown(mouse, camera, event);   
 }
