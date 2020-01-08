@@ -24,8 +24,8 @@ export default class Soldier
 
     currentPosition : Vector3 = new Vector3(0, 0, 0);
     velocity : Vector3 = new Vector3(0, 0, 0);
-    maxVelocity : number = 2;
-    maxForce : number = 0.05;
+    maxVelocity : number = 3;
+    maxForce : number = 0.1;
 
     constructor()
     {
@@ -61,6 +61,7 @@ export default class Soldier
         //this.createPanel();
         sold.createSettings();
         sold.activateAllActions();
+        sold.setAnimations(0.02);
         //createPanel();
         //activateAllActions();
         //animate();
@@ -79,13 +80,19 @@ export default class Soldier
     currentIndex : number = 1;
     targetRadius : number = 0.5;
     slowRadius : number = 1;
+    lastTarget : Vector3 = new Vector3(0, 0, 0);
 
     setPath(path : Array<Cell>) : void
     {
+        if(path == null || path.length == 0)
+        {
+            return;
+        }
+
         this.currentPath = path;
         this.currentIndex = 1;
         this.followNextTarget();
-
+        this.lastTarget = path[path.length - 1].worldCoords;
         //highlight path
         path.forEach(cell => {
             var material : MeshBasicMaterial = <MeshBasicMaterial>cell.mesh.material;
@@ -142,31 +149,31 @@ export default class Soldier
 
     getIdleValue(normalizedValue : number) : number
     {
-        normalizedValue *= Math.PI;
+        normalizedValue *= Math.PI/2;
         return -Math.sin(normalizedValue) + 1;
     }
 
     getWalkValue(normalizedValue : number) : number
     {
-        normalizedValue *= Math.PI;
+        normalizedValue *= Math.PI/2;
         return Math.sin(normalizedValue*2);
     }
     
     getRunValue(normalizedValue : number) : number
     {
-        normalizedValue *= Math.PI;
+        normalizedValue *= Math.PI/2;
         return Math.sin(normalizedValue);
     }
 
     movementUpdate(deltaTime)
     {
-        if(this.currentPosition.clone().distanceTo(this.target) < 0.001)
+        if(this.currentPosition.clone().distanceTo(this.target) < 0.0001)
         {
             return;
         }
 
         var desiredVelocity = (this.target.clone().sub(this.currentPosition));
-        var slowDownDistance = desiredVelocity.length();
+        var slowDownDistance = (this.lastTarget.clone().sub(this.currentPosition)).length();
 
         //slowing down
         if(slowDownDistance < this.slowRadius)
@@ -189,7 +196,9 @@ export default class Soldier
         
         var currentDistance = this.currentPosition.distanceTo(this.target);
 
-        console.log(this.velocity.length());
+        var normalizedSpeed = this.velocity.length() / this.maxVelocity;
+        //console.log(normalizedDistance)
+        this.setAnimations(normalizedSpeed);
 
         //target reached
         if(currentDistance < this.targetRadius)
@@ -197,13 +206,14 @@ export default class Soldier
             this.followNextTarget();
             return;
         }
-        //
+    }
 
-        var normalizedDistance = currentDistance / this.targetDistance;
-        //console.log(normalizedDistance)
-        this.setWeight(this.idleAction, this.getIdleValue(normalizedDistance));
-        this.setWeight(this.walkAction, this.getWalkValue(normalizedDistance));
-        this.setWeight(this.runAction, this.getRunValue(normalizedDistance));
+    setAnimations(value : number)
+    {
+        console.log(value);
+        this.setWeight(this.idleAction, this.getIdleValue(value));
+        this.setWeight(this.walkAction, this.getWalkValue(value));
+        this.setWeight(this.runAction, this.getRunValue(value));
     }
 
     update(deltaTime) : void
