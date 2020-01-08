@@ -39,7 +39,8 @@ export default class Soldier
     slowRadius : number = 1;
     lastTarget : Vector3 = new Vector3(0, 0, 0);
     //avoid
-    maxSeeAhead : number = 5;
+    maxSeeAhead : number = 1.5;
+    maxAvoidance : number = 0.5;
     raycaster : Raycaster;
 
     constructor()
@@ -77,7 +78,7 @@ export default class Soldier
         sold.createSettings();
         sold.activateAllActions();
         sold.setAnimations(0);
-        this.createDebugLine();
+        // this.createDebugLine();
 
         onComplete(this);
     }
@@ -117,21 +118,26 @@ export default class Soldier
 
     }
 
+    changeRotation()
+    {
+        var current = this.currentFacing.clone();
+        var targetRot = this.target.clone().sub(this.currentPosition).normalize().multiplyScalar(-1);
+
+        if(current.distanceTo(targetRot) < 0.1)
+        {
+            return;
+        }
+
+        this.currentFacing.add(targetRot.sub(current).normalize().multiplyScalar(0.1));
+        var mx = new Matrix4().lookAt(this.currentFacing, new Vector3(0,0,0), new Vector3(0,1,0));
+        this.model.quaternion.setFromRotationMatrix(mx);
+    }
+
     setTarget(target : Vector3) : void 
     {
         //set the target
         this.target = target;
         this.targetDistance = target.distanceTo(this.currentPosition);
-        //rotate towards target
-        const tween = new TWEEN.Tween(this.currentFacing)
-        .to(this.target.clone().sub(this.currentPosition).multiplyScalar(-1) , 300)
-        //.easing(TWEEN.Easing.Quadratic.Out) // Use an easing function to make the animation smooth.
-        .onUpdate(() => 
-        {
-            var mx = new Matrix4().lookAt(this.currentFacing, new Vector3(0,0,0), new Vector3(0,1,0));
-            this.model.quaternion.setFromRotationMatrix(mx);
-        })
-        .start();
     }
 
     getIdleValue(normalizedValue : number) : number
@@ -159,6 +165,8 @@ export default class Soldier
             return;
         }
 
+        this.changeRotation();
+
         var desiredVelocity = (this.target.clone().sub(this.currentPosition));
         var slowDownDistance = (this.lastTarget.clone().sub(this.currentPosition)).length();
 
@@ -173,44 +181,13 @@ export default class Soldier
         {
             desiredVelocity.normalize().multiplyScalar(this.maxVelocity);
         }
-    
 
+        //steering + avoidance
         var steering = desiredVelocity.clone().sub(this.velocity);
+        steering.add(this.collisionAvoidance());
 
         steering = steering.clampLength(0, this.maxForce);
         this.velocity = (this.velocity.clone().add(steering)).clampLength(0, this.maxVelocity);
-
-
-        //=== collision avoidance ====
-        //var ahead : Vector3 = this.currentPosition.clone().add(this.velocity).normalize()
-        var ahead = this.currentFacing.clone().multiplyScalar(-1);
-        //.multiplyScalar(this.maxSeeAhead);
-        var start = this.currentPosition.clone().add(new Vector3(0, 0.3, 0));
-        var end = this.currentPosition.clone().add(new Vector3(0, 0.3, 0)).add(ahead);  
-        
-        this.updateDebugLine(start, end);
-        this.raycaster.set(start, ahead);
-        this.raycaster.far = this.maxSeeAhead;
-        //debug line
-
-        //
-
-        var intersects = this.raycaster.intersectObjects(this.scene.children)
-        {
-            if(intersects.length > 0)
-            {
-                //TODO prevent debug intersect
-                if(intersects[0].object != this.line)
-                {
-                    console.log("hit");
-                }
-            }
-        }
-        //raycast - may implement own collision function here
-
-
-
-        //============================
 
 
         //===SET POSITION===
@@ -230,6 +207,35 @@ export default class Soldier
             this.followNextTarget();
             return;
         }
+    }
+
+    collisionAvoidance() : Vector3
+    {
+        var ahead = this.currentFacing.clone().multiplyScalar(-1);
+        var start = this.currentPosition.clone().add(new Vector3(0, 0.3, 0));
+        //var end = this.currentPosition.clone().add(new Vector3(0, 0.3, 0)).add(ahead);  
+        
+        this.raycaster.set(start, ahead);
+        this.raycaster.far = this.maxSeeAhead;
+        
+        var avoidance = new Vector3(0, 0, 0);
+        var intersects = this.raycaster.intersectObjects(this.scene.children)
+        {
+            if(intersects.length > 0)
+            {
+                //TODO prevent debug intersect
+                if(intersects[0].object != this.line)
+                {
+                    console.log("hit");
+                    avoidance = ahead.clone().sub(intersects[0].object.position);
+                    avoidance.normalize();
+                    avoidance.multiplyScalar(this.maxAvoidance);
+                    avoidance.y = 0;
+                }
+            }
+        }
+
+        return avoidance;
     }
 
     line;
