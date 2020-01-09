@@ -95,7 +95,7 @@ export default class Grid
         return x >= 0 && x < this.size && y >= 0 && y < this.size;
     }
 
-    getNeighbors(cell : Cell) : Array<Cell>
+    getNeighbors(cell : Cell, considerCorners : boolean = false) : Array<Cell>
     {
         var neighbors : Array<Cell> = new Array<Cell>();
 
@@ -104,6 +104,10 @@ export default class Grid
             for(var j = -1; j <=1 ; j++)
             {
                 if(i == 0 && j == 0)
+                {
+                    continue;
+                }
+                if(!considerCorners && Math.abs(i) + Math.abs(j) > 1)
                 {
                     continue;
                 }
