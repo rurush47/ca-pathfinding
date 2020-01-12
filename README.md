@@ -1,5 +1,14 @@
-# Typescript Three.js Webpack Starter
+# Pathfinding implementation using Three.js
 
+### Features:
+- basic steering behaviour
+- A* pathfinding
+- slowing and avoidance forces
+- Reynolds path following
+- interactive scene
+
+### Technology:
+- Three.js
 - Typescript support.
 - Webpack
 - Html plugin
