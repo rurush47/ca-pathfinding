@@ -56,6 +56,9 @@ function init() {
     mesh.receiveShadow = true;
     scene.add(mesh);
 
+    gridSize = 20;
+    addGrid();
+
     var sold = new Soldier();
     sold.init(scene, (soldier : Soldier) => 
     {
@@ -66,14 +69,30 @@ function init() {
     });
 
     var sold2 = new Soldier();
+
     sold2.init(scene, (soldier : Soldier) => 
     {
         scene.add(soldier.model);
         scene.add(soldier.skeleton);
         models.push(soldier);
         soldier.setPosition(new Vector2(5, 5));
+        soldier.model.translateZ(5);
+        soldier.model.translateX(5);
+        
         var p = new Pathfinder();
-        soldier.setPath(p.aStar(grid.cellGrid[5][5], grid.cellGrid[0][0], grid));
+        var setRandomPath = (tgSold : Soldier) => 
+        {
+            var soldGridCoords = grid.toGridCoordsVec3(tgSold.model.position);
+
+            tgSold.setPath(
+                p.aStar(
+                    grid.cellGrid[soldGridCoords.x][soldGridCoords.y],
+                    grid.cellGrid[Math.floor(Math.random() * gridSize)][Math.floor(Math.random() * gridSize)],
+                    grid));
+        }
+        soldier.onTargetReached = setRandomPath;
+        
+        setRandomPath(soldier);
     });
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -84,7 +103,6 @@ function init() {
     container.appendChild(renderer.domElement);
 
     addOrbitControl();
-    addGrid();
 
     inputController = new InputController(grid, scene);
 
@@ -106,10 +124,11 @@ function addOrbitControl() {
 }
 
 var grid : Grid;
+var gridSize : number = 20;
 
 function addGrid() 
 {
-    grid = new Grid(20, 1);
+    grid = new Grid(gridSize, 1);
     scene.add(grid.treeObj);
 }
 

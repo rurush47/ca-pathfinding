@@ -95,8 +95,6 @@ export default class Soldier
             return;
         }
 
-        this.isTargetReached = false;
-
         this.currentPath = path;
         this.currentIndex = 1;
         this.followNextTarget();
@@ -120,11 +118,11 @@ export default class Soldier
         this.currentIndex++;
     }
 
-    onTargetReached : () => void = ()=>{console.log("target reached")};
+    onTargetReached : (sold : Soldier) => void = ()=>{console.log("target reached")};
 
     targetReached() : void
     {
-        this.onTargetReached();
+        this.onTargetReached(this);
     }
 
     changeRotation()
@@ -167,17 +165,15 @@ export default class Soldier
         return Math.sin(normalizedValue);
     }
 
-    isTargetReached : boolean = false;
-
     movementUpdate(deltaTime)
     {
         if(this.currentPosition.clone().distanceTo(this.target) < 0.0001)
         {
             //target reached
-            if(this.target == this.lastTarget && !this.isTargetReached)
+            if(this.target == this.lastTarget)
             {
+                this.lastTarget = null;
                 this.targetReached();
-                this.isTargetReached = true;
             }
             return;
         }
