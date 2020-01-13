@@ -28,7 +28,7 @@ export default class Pathfinder
             //remove first (current element)
             openSet.shift();
 
-            grid.getNeighbors(current).forEach(neighbor => 
+            grid.getNeighbors(current, true).forEach(neighbor => 
                 {
                     var tentativeScore = gScore.get(current) + this.distance(current, neighbor);
                     var neighborGScore = gScore.has(neighbor) ? gScore.get(neighbor) : Number.MAX_VALUE;
