@@ -1,4 +1,4 @@
-import { Object3D, SkeletonHelper, AnimationMixer, Vector3, Matrix4, MeshBasicMaterial, Raycaster, Scene, LineBasicMaterial, Geometry, Line } from "three";
+import { Object3D, SkeletonHelper, AnimationMixer, Vector3, Matrix4, MeshBasicMaterial, Raycaster, Scene, LineBasicMaterial, Geometry, Line, Vector2 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 import TWEEN from '@tweenjs/tween.js';
@@ -83,12 +83,19 @@ export default class Soldier
         onComplete(this);
     }
 
+    setPosition(newPos : Vector2) 
+    {
+        this.currentPosition = new Vector3(newPos.x, 0, newPos.y);   
+    }
+
     setPath(path : Array<Cell>) : void
     {
         if(path == null || path.length == 0)
         {
             return;
         }
+
+        this.isTargetReached = false;
 
         this.currentPath = path;
         this.currentIndex = 1;
@@ -113,9 +120,11 @@ export default class Soldier
         this.currentIndex++;
     }
 
+    onTargetReached : () => void = ()=>{console.log("target reached")};
+
     targetReached() : void
     {
-
+        this.onTargetReached();
     }
 
     changeRotation()
@@ -158,10 +167,18 @@ export default class Soldier
         return Math.sin(normalizedValue);
     }
 
+    isTargetReached : boolean = false;
+
     movementUpdate(deltaTime)
     {
         if(this.currentPosition.clone().distanceTo(this.target) < 0.0001)
         {
+            //target reached
+            if(this.target == this.lastTarget && !this.isTargetReached)
+            {
+                this.targetReached();
+                this.isTargetReached = true;
+            }
             return;
         }
 
