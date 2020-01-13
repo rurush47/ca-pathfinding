@@ -36,7 +36,7 @@ export default class Cell
             this.cube = cube;
     
             //TODO fast programming - remove hardcoded coords
-            var woldCoords = this.mesh.position.clone().sub(new Vector3(5,-0.5,5));
+            var woldCoords = this.mesh.position.clone().sub(new Vector3(10,-0.5,10));
             cube.position.set(woldCoords.x, woldCoords.y, woldCoords.z);
         }
     }

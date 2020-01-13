@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js'
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
-import { Scene, Renderer, PerspectiveCamera, WebGLRenderer, PlaneGeometry, MeshBasicMaterial, Vector3 } from 'three';
+import { Scene, Renderer, PerspectiveCamera, WebGLRenderer, PlaneGeometry, MeshBasicMaterial, Vector3, Vector2 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import ModelLoader from './modelLoader'
 import Grid from './grid';
 import InputController from './inputController';
 import Soldier from './soldier';
 import TWEEN from '@tweenjs/tween.js';
+import Pathfinder from './pathfinder';
 
 var scene: Scene;
 var renderer: WebGLRenderer;
@@ -64,6 +65,17 @@ function init() {
         inputController.initSold(soldier);
     });
 
+    var sold2 = new Soldier();
+    sold2.init(scene, (soldier : Soldier) => 
+    {
+        scene.add(soldier.model);
+        scene.add(soldier.skeleton);
+        models.push(soldier);
+        soldier.setPosition(new Vector2(5, 5));
+        var p = new Pathfinder();
+        soldier.setPath(p.aStar(grid.cellGrid[5][5], grid.cellGrid[0][0], grid));
+    });
+
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -97,7 +109,7 @@ var grid : Grid;
 
 function addGrid() 
 {
-    grid = new Grid(10, 1);
+    grid = new Grid(20, 1);
     scene.add(grid.treeObj);
 }
 
