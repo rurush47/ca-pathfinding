@@ -272,14 +272,6 @@ export default class Soldier
     {
         this.movementUpdate(deltaTime);
 
-        this.idleWeight = this.idleAction.getEffectiveWeight();
-        this.walkWeight = this.walkAction.getEffectiveWeight();
-        this.runWeight = this.runAction.getEffectiveWeight();
-        // Update the panel values if weights are modified from "outside" (by crossfadings)
-        this.updateWeightSliders();
-        // Enable/disable crossfade controls according to current weight values
-        //this.updateCrossFadeControls();
-
         // Get the time elapsed since the last frame, used for mixer update (if not in single step mode)
         var mixerUpdateDelta = deltaTime;
         // If in single step mode, make one step and then do nothing (until the user clicks again)
